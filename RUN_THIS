@@ -1,0 +1,184 @@
+import cv2
+import dlib
+import numpy as np
+from pyaxidraw import axidraw  
+import time 
+import random
+
+detector = dlib.get_frontal_face_detector()
+predictor = dlib.shape_predictor("/Users/balintligeti/Documents/MOME_5.felev/kurzushet/shape_predictor_68_face_landmarks.dat")
+
+def calculate_mouth_openness(landmarks):
+    top_lip = landmarks[62]
+    bottom_lip = landmarks[66]
+    return abs(bottom_lip[1] - top_lip[1])
+
+
+ad = axidraw.AxiDraw()
+mouth_openness = 0.5
+
+#-----------------------_#
+
+def drawRectangle():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+    ad.move(0, size)
+    ad.move(size, 0)
+    ad.move(0, -size)
+    ad.move(-size, 0)
+    
+def drawRectangleLOOP():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+    
+    for x in range(3):
+        for x in range(2):
+            ad.move(0, size)
+            ad.move(size, 0)
+            ad.move(0, -size)
+            ad.move(-size, 0)
+        ad.move(1.5,0)
+
+    
+def drawSomeRandomStuff():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+    ad.move(size / 2, size * 2)
+    ad.move(size * 2, size / 2)
+    ad.move(- (size / 2), -(size * 2))
+    ad.move(-(size * 2), -(size / 2))
+    
+def drawHexagon():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+
+    ad.move(0, size * random.uniform(0.5, 1.9))  
+    ad.move(size, 0)                             
+    ad.move(size * 0.5, -size)                   
+    ad.move(-size * 0.5, -size)                  
+    ad.move(-size, 0)                            
+    ad.move(-size * 0.5, size) 
+    
+def drawOctagon():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+
+    ad.move(0, size * random.uniform(0.5, 1.9))   # First side (vertical)
+    ad.move(size * 0.71, size * 0.71)             # Second side (diagonal up-right)
+    ad.move(size, 0)                              # Third side (horizontal right)
+    ad.move(size * 0.71, -size * 0.71)            # Fourth side (diagonal down-right)
+    ad.move(0, -size)                             # Fifth side (vertical down)
+    ad.move(-size * 0.71, -size * 0.71)           # Sixth side (diagonal down-left)
+    ad.move(-size, 0)                             # Seventh side (horizontal left)
+    ad.move(-size * 0.71, size * 0.71)            # Eighth side (diagonal up-left)
+
+def drawPentagon():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+
+    # Move for each side of the pentagon
+    ad.move(0, size * random.uniform(0.5, 1.9))  # First side (vertical)
+    ad.move(size * 0.95, size * 0.31)            # Second side (diagonal up-right)
+    ad.move(size * 0.59, -size * 0.81)           # Third side (diagonal down-right)
+    ad.move(-size * 0.59, -size * 0.81)          # Fourth side (diagonal down-left)
+    ad.move(-size * 0.95, size * 0.31)           # Fifth side (diagonal up-left)
+
+    
+#-----------------------_#
+
+def draw():
+    size = mouth_openness / 10
+    if size > 4:
+        size = 0.5
+    ad.move(0, size*random.uniform(0.5, 1.9))
+    ad.move(size, 0)
+    ad.move(0, -size)
+    ad.move(-size*random.uniform(0.5, 1.9), 0)
+    
+def connectAxidraw():
+    ad.interactive()
+    ad.options.speed_pendown = 110
+    ad.options.speed_penup = 110
+    connected = ad.connect()
+
+    if not connected:
+        quit()
+    return ad
+
+def drawWithAxidraw(direction):
+    if direction == 'right':
+        ad.move(1, 0)
+    elif direction == 'left':
+        ad.move(-1, 0) 
+    elif direction == 'forward':
+        ad.move(0, 1)
+    elif direction == 'backward':
+        ad.move(0, -1)   
+    drawRectangle()
+    
+
+def get_face_direction(landmarks):
+    left_eye = landmarks[36:42]  
+    right_eye = landmarks[42:48]  
+
+    left_eye_center = np.mean(left_eye, axis=0).astype(int)
+    right_eye_center = np.mean(right_eye, axis=0).astype(int)
+
+    nose = landmarks[30]
+
+    delta_x = right_eye_center[0] - left_eye_center[0]
+    delta_y = right_eye_center[1] - left_eye_center[1]
+
+    if delta_x != 0:  
+        angle = np.arctan2(delta_y, delta_x) * 180 / np.pi  
+
+        if angle > 10:
+            return 'left'
+        elif angle < -10:
+            return 'right'
+        else:  
+            nose_y = nose[1]
+            eye_y_avg = 500
+
+            if nose_y < eye_y_avg - 40:
+                return 'backward'
+            elif nose_y > eye_y_avg + 40:  
+                return 'forward'
+            else:
+                return 'neutral'  
+
+#--------------------------------------------#
+
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    cv2.line(frame, (0, 400), (frame.shape[1], 400), (0, 255, 0), 2)
+    connectAxidraw()
+    faces = detector(gray)
+    if len(faces) > 0:
+        landmarks = predictor(gray, faces[0])
+        landmarks = np.array([[p.x, p.y] for p in landmarks.parts()])
+
+        for (x, y) in landmarks:
+            cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
+
+        mouth_openness = calculate_mouth_openness(landmarks)
+        cv2.putText(frame, f'Mouth openness: {mouth_openness}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        face_direction = get_face_direction(landmarks)
+        cv2.putText(frame, f'Face direction: {face_direction}', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+        drawWithAxidraw(face_direction)
+    cv2.imshow("Face Detector", frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()

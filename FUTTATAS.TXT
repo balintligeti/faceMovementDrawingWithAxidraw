@@ -1,0 +1,12 @@
+VIRTUAN ENVIROMENTBOL KELL
+    python3 -m venv venv
+    source venv/bin/activate
+
+
+python3 test_file.py
+
+
+installok:
+    pip install opencv-python
+    python -m pip install https://cdn.evilmadscientist.com/dl/ad/public/AxiDraw_API.zip
+    pip install dlib

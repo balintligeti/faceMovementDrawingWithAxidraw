@@ -1,0 +1,11 @@
+def drawSVG(mouth_openness):
+
+    svg = f"""<?xml version="1.0" encoding="utf-8"?>
+    <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+    <svg width="{mouth_openness}px" height="{mouth_openness}px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 21h22V3H1zM2 4h20v16H2z"/>
+        <path fill="none" d="M0 0h24v24H0z"/>
+    </svg>"""
+    
+    ad.plot_setup(svg)
+    ad.plot_run()
